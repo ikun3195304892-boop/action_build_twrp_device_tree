@@ -36,11 +36,22 @@ jobs:
     - name: Download boot or recovery img
       run: |
         aria2c "${{ github.event.inputs.IMG_URL }}"
-        ls
+        echo "Contents of workspace after download:"
+        ls -la
+        # find the first .img file downloaded
+        IMG_FILE=$(ls -1 *.img 2>/dev/null | head -n1 || true)
+        if [ -z "$IMG_FILE" ]; then
+          echo "No .img file found in the workspace after download."
+          exit 1
+        fi
+        echo "Using image: $IMG_FILE"
       
     - name: Start build
       run: |
-        python -m twrpdtgen -o dt/ *.img
+        # use the discovered image file (first .img found)
+        IMG_FILE=$(ls -1 *.img 2>/dev/null | head -n1)
+        echo "Running twrpdtgen on: $IMG_FILE"
+        python -m twrpdtgen -o dt "$IMG_FILE"
 
     - name: ZIP device tree
       run: |
